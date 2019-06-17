@@ -132,21 +132,59 @@ def handle_text(message):
 
     name = get_username_or_first_name(message.chat.id, user_id)
 
-    try:
+    sql = "SELECT DATE_FORMAT(Birthday, '%Y.%m.%d') FROM birthdays WHERE User_Id = %s AND Chat_Id = %s"
+    val = (user_id, message.chat.id)
+    cursor.execute(sql, val)
+    is_registered_in_chat = cursor.fetchall()
+
+    # Check if the user's birthday is already registered in this chat
+    if is_registered_in_chat:
+        birthday_date_in_the_database = is_registered_in_chat[0][0]
+        if birthday_date_in_the_database == birthday_date:
+            answer = "Don't worry, {}! I remember you were born on {} {}" \
+                .format(name, birthday_date[8:], constants.months.get(int(birthday_date[5:7])))
+        else:
+            sql = "UPDATE birthdays SET Birthday = %s WHERE User_Id = %s"
+            val = (birthday_date, user_id)
+            cursor.execute(sql, val)
+            db.commit()
+            answer = "Update! \nLooks like {0} went back to past and changed his (her) birth date (somehow)" \
+                     "\nSo {0} was born on {1} {2} now! \nI wonder if his (her) age has changed..." \
+                .format(name, birthday_date[8:], constants.months.get(int(birthday_date[5:7])))
+    else:
+        sql = "SELECT DATE_FORMAT(Birthday, '%Y.%m.%d') FROM birthdays WHERE User_Id = %s"
+        val = (user_id, )
+        cursor.execute(sql, val)
+        is_registered_in_the_database = cursor.fetchall()
+
+        # Check if the user's birthday have been registered in the database before
+        if is_registered_in_the_database:
+            birthday_date_in_the_database = is_registered_in_the_database[0][0]
+            if birthday_date_in_the_database == birthday_date:
+                answer = "Happy to see you again, {}! How are things going?" \
+                    .format(name)
+            else:
+                answer = "Hey, {}! That's quite suspicious... \nIn another chat you said you were born on {} {} {} " \
+                         "\nAnyway, I have updated my database. So now your birthday is {} {} {}.. In every chat :)" \
+                    .format(name,
+                            birthday_date_in_the_database[8:],
+                            constants.months.get(int(birthday_date_in_the_database[5:7])),
+                            birthday_date_in_the_database[:4],
+                            birthday_date[8:],
+                            constants.months.get(int(birthday_date[5:7])),
+                            birthday_date[:4])
+                sql = "UPDATE birthdays SET Birthday = %s WHERE User_Id = %s"
+                val = (birthday_date, user_id)
+                cursor.execute(sql, val)
+                db.commit()
+        else:
+            answer = "Hi, {}! \nI'm so glad to meet you! \nI will remember you were born on {} {}" \
+                .format(name, birthday_date[8:], constants.months.get(int(birthday_date[5:7])))
+
         sql = "INSERT INTO birthdays (User_Id, Birthday, Chat_Id) VALUES (%s, %s, %s)"
         val = (user_id, birthday_date, message.chat.id)
         cursor.execute(sql, val)
-        answer = "Ok, great! \n{}, I will remember you were born on {} {}" \
-            .format(name, birthday_date[8:], constants.months.get(int(birthday_date[5:7])))
-    except mysql.connector.errors.IntegrityError:
-        sql = "UPDATE birthdays SET Birthday = %s WHERE User_Id = %s"
-        val = (birthday_date, user_id)
-        cursor.execute(sql, val)
-        answer = "Update! \nLooks like {0} went back to past and changed his (her) birth date (somehow)" \
-                 "\nSo {0} was born on {1} {2} now! \nI wonder if his (her) age has changed..." \
-            .format(name, birthday_date[8:], constants.months.get(int(birthday_date[5:7])))
-
-    db.commit()
+        db.commit()
 
     bot.send_message(message.chat.id, answer)
     bot.send_sticker(message.chat.id, "CAADAgADGAEAArnzlwtw2f1OYY8VcwI")

@@ -21,7 +21,6 @@ awake_mysql_db()
 cursor.execute("SELECT * FROM was_birthday")
 was_birthdays = cursor.fetchall()
 
-# Set photo which was before person's birthday as a chat photo again
 for past_birthday in was_birthdays:
     chat_id_of_past_birthday, new_photo_of_past_birthday_id, old_photo_of_past_birthday_id = past_birthday
     # If users blocked the bot, it won't be able to find the chat ------------------------------------------
@@ -35,25 +34,24 @@ for past_birthday in was_birthdays:
         cursor.execute(sql, val)
         db.commit()
         continue
-    # ------------------------------------------------------------------------------------------------------
+    # Set photo which was before person's birthday as a chat photo again -----------------------------------
     chat_photo_now = chat.photo
-    if not chat_photo_now:
-        continue
-    chat_photo_now_file_id = chat_photo_now.big_file_id
-    if chat_photo_now_file_id == new_photo_of_past_birthday_id:  # User haven't changed it
-        if old_photo_of_past_birthday_id == "None":
-            try:
-                bot.delete_chat_photo(chat_id_of_past_birthday)
-            except telebot.apihelper.ApiException:
-                bot.send_message(chat_id_of_past_birthday, "I can't set a chat photo :( "
-                                                           "\nLooks like I don't have the appropriate admin rights")
-        else:
-            file_of_old_photo = bot.download_file(bot.get_file(old_photo_of_past_birthday_id).file_path)
-            try:
-                bot.set_chat_photo(chat_id_of_past_birthday, file_of_old_photo)
-            except telebot.apihelper.ApiException:
-                bot.send_message(chat_id_of_past_birthday, "I can't set a chat photo :( "
-                                                           "\nLooks like I don't have the appropriate admin rights")
+    if chat_photo_now:
+        chat_photo_now_file_id = chat_photo_now.big_file_id
+        if chat_photo_now_file_id == new_photo_of_past_birthday_id:  # User haven't changed it
+            if old_photo_of_past_birthday_id == "None":
+                try:
+                    bot.delete_chat_photo(chat_id_of_past_birthday)
+                except telebot.apihelper.ApiException:
+                    bot.send_message(chat_id_of_past_birthday, "I can't set a chat photo :( "
+                                                               "\nLooks like I don't have the appropriate admin rights")
+            else:
+                file_of_old_photo = bot.download_file(bot.get_file(old_photo_of_past_birthday_id).file_path)
+                try:
+                    bot.set_chat_photo(chat_id_of_past_birthday, file_of_old_photo)
+                except telebot.apihelper.ApiException:
+                    bot.send_message(chat_id_of_past_birthday, "I can't set a chat photo :( "
+                                                               "\nLooks like I don't have the appropriate admin rights")
 
     sql = "DELETE FROM was_birthday WHERE Chat_Id = %s AND New_Photo_Id = %s AND Old_photo_Id = %s"
     val = (chat_id_of_past_birthday, new_photo_of_past_birthday_id, old_photo_of_past_birthday_id)
@@ -129,7 +127,7 @@ for birthday in birthdays:
         val = (new_chat_photo_id, chat)
         cursor.execute(sql, val)
     else:
-        sql = "INSERT INTO was_birthday (Chat_Id, New_Photo_Id, Old_photo_Id) VALUES (%s, %s, %s)"
+        sql = "INSERT INTO was_birthday (Chat_Id, New_Photo_Id, Old_Photo_Id) VALUES (%s, %s, %s)"
         val = (chat, new_chat_photo_id, previous_chat_photo_id)
         cursor.execute(sql, val)
     db.commit()

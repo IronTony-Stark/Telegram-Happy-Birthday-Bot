@@ -8,7 +8,6 @@ script you can use this code.
 """
 import constants
 import datetime
-import mysql.connector
 import telebot
 import flask
 from flask import Flask
@@ -81,7 +80,7 @@ def handle_text(message):
 
     if len(words_in_message) != 2:
         bot.reply_to(message, 'Wrong format. '
-                              '\nPlease write "/mybirthday dd.mm.yyyy"'
+                              '\nPlease type "/mybirthday dd.mm.yyyy"'
                               '\n dd, mm, yyyy - the day, month and year when you were born')
         return
 
@@ -89,7 +88,7 @@ def handle_text(message):
 
     if not constants.date_of_birth_pattern.match(birthday_date):
         bot.reply_to(message, 'Wrong format. '
-                              '\nPlease write "/mybirthday dd.mm.yyyy"'
+                              '\nPlease type "/mybirthday dd.mm.yyyy"'
                               '\ndd, mm, yyyy - the day, month and year when you were born')
         return
 
@@ -153,7 +152,7 @@ def handle_text(message):
                 .format(name, birthday_date[8:], constants.months.get(int(birthday_date[5:7])))
     else:
         sql = "SELECT DATE_FORMAT(Birthday, '%Y.%m.%d') FROM birthdays WHERE User_Id = %s"
-        val = (user_id, )
+        val = (user_id,)
         cursor.execute(sql, val)
         is_registered_in_the_database = cursor.fetchall()
 
@@ -205,7 +204,7 @@ def handle_text(message):
     bot.send_message(message.chat.id,
                      "Often forgetting when the birthday of your friend is? This won’t happen again! "
                      "\nI am HappyBirthdayBot and I’ll make sure your friends are happy when their birthdays come! "
-                     "\n\nAll you need to do is to add me to your chat group and ask your friends to write the command "
+                     "\n\nAll you need to do is to add me to your chat group and ask your friends to type the command "
                      "/mybirthday [date of your friend's birthday in format dd.mm.yyyy]. Don’t forget to do the same "
                      "and you are all done! When the day comes I’ll send my congratulation to this chat group. Also, "
                      "I’ll take the birthday person's profile photo, modify it adding some cool things and send "
@@ -226,7 +225,7 @@ def handle_text(message):
 
     if len(words_in_message) != 2:
         bot.reply_to(message, 'Wrong format. '
-                              '\nPlease write "\mybirthday [user id]"')
+                              '\nPlease type "/mybirthday [user id]"')
         return
 
     user_id = words_in_message[1]
@@ -311,6 +310,16 @@ def handle_text(message):
     bot.send_sticker(message.chat.id, "CAADAgADQAADVSx4CwnTmrLuK3GoAg")
 
 
+@bot.message_handler(commands=['start'])
+def handle_text(message):
+    bot.send_sticker(message.chat.id, "CAADAgADZgADVSx4C4I00LsibnWGAg")
+    bot.send_message(message.chat.id,
+                     "Hi! I'm so happy to meet you!!"
+                     "\nNow add me to some chat group and type /mybirthday [your birth date in format dd.mm.yyyy]"
+                     "\nType /aboutme if you want to get more info"
+                     "\nHope you enjoy! :)")
+
+
 # Threading ----------------------------------------------------------------------
 # By the way I haven't checked if it works.. But I suppose it does :)
 
@@ -319,8 +328,8 @@ def handle_text(message):
 # import time
 # import threading
 # import os
-
-
+#
+#
 # def count_time_to_sleep(wake_up_hour: "int") -> "int":
 #     """
 #     Counts how many minutes is needed for thread to sleep, so the wake up time will be :param wake_up_hour
@@ -360,114 +369,115 @@ def handle_text(message):
 #         for past_birthday in was_birthdays:
 #             chat_id_of_past_birthday, new_photo_of_past_birthday_id, old_photo_of_past_birthday_id = past_birthday
 #             if old_photo_of_past_birthday_id == "None":
-#                  try:
+#                 try:
 #                     bot.delete_chat_photo(chat_id_of_past_birthday)
 #                 except telebot.apihelper.ApiException:
 #                     bot.send_message(chat_id_of_past_birthday, "I can't set a chat photo :( "
-#                                                            "\nLooks like I don't have the appropriate admin rights")
-#             else:
-#                 chat_photo_now_file_id = bot.get_chat(chat_id_of_past_birthday).photo.big_file_id
-#                 if chat_photo_now_file_id == new_photo_of_past_birthday_id:  # User haven't changed it
-#                     file_of_old_photo = bot.download_file(bot.get_file(old_photo_of_past_birthday_id).file_path)
-#                     try:
-#                         bot.set_chat_photo(chat_id_of_past_birthday, file_of_old_photo)
-#                     except telebot.apihelper.ApiException:
-#                         bot.send_message(chat_id_of_past_birthday,
-#                                          "I can't set a chat photo :( "
-#                                          "\nLooks like I don't have the appropriate admin rights")
+#                                                                "\nLooks like I don't have the appropriate admin
+#                                                                rights")
+#         else:
+#             chat_photo_now_file_id = bot.get_chat(chat_id_of_past_birthday).photo.big_file_id
+#             if chat_photo_now_file_id == new_photo_of_past_birthday_id:  # User haven't changed it
+#                 file_of_old_photo = bot.download_file(bot.get_file(old_photo_of_past_birthday_id).file_path)
+#                 try:
+#                     bot.set_chat_photo(chat_id_of_past_birthday, file_of_old_photo)
+#                 except telebot.apihelper.ApiException:
+#                     bot.send_message(chat_id_of_past_birthday,
+#                                      "I can't set a chat photo :( "
+#                                      "\nLooks like I don't have the appropriate admin rights")
 #
-#             sql = "DELETE FROM was_birthday WHERE Chat_Id = %s AND New_Photo_Id = %s AND Old_photo_Id = %s"
-#             val = (chat_id_of_past_birthday, new_photo_of_past_birthday_id, old_photo_of_past_birthday_id)
+#         sql = "DELETE FROM was_birthday WHERE Chat_Id = %s AND New_Photo_Id = %s AND Old_photo_Id = %s"
+#         val = (chat_id_of_past_birthday, new_photo_of_past_birthday_id, old_photo_of_past_birthday_id)
+#         cursor.execute(sql, val)
+#         db.commit()
+#
+#     # ----------------------------------------------------------------------------------------------------------
+#     # Check if someone has birthday today ----------------------------------------------------------------------
+#     # Edit to fit MySQl DATE_FORMAT(Birthday, '%m.%d') ---------------------------------------------------------
+#     month_now = str(datetime.date.today().month)
+#     day_now = str(datetime.date.today().day)
+#
+#     if len(month_now) == 1:
+#         month_now = "0" + month_now
+#
+#     if len(day_now) == 1:
+#         day_now = "0" + day_now
+#     # -----------------------------------------------------------------------------------------------------------
+#
+#     cursor.execute("SELECT User_Id, Chat_Id FROM birthdays WHERE DATE_FORMAT(Birthday, '%m.%d') = {}"
+#                    .format(month_now + "." + day_now))
+#
+#     birthdays = cursor.fetchall()
+#
+#     for birthday in birthdays:
+#         script_directory = os.path.dirname(os.path.abspath(__file__))
+#         user_who_has_birthday_id, chat = birthday
+#         try:
+#             bot.send_chat_action(chat, 'typing')
+#         except telebot.apihelper.ApiException:
+#             sql = "DELETE FROM birthdays WHERE Chat_Id = %s"
+#             val = (chat,)
 #             cursor.execute(sql, val)
 #             db.commit()
+#             continue
+#         # Get user_who_has_birthday profile photo
+#         user_profile_photos = bot.get_user_profile_photos(user_who_has_birthday_id, limit=1).photos
+#         if not user_profile_photos:
+#             bot.send_message(chat, "Looks like somebody doesn't have the profile photo. ")
+#             user_profile_photos = bot.get_user_profile_photos(constants.bot_id, limit=1).photos
+#         user_photo_file_id = user_profile_photos[0][2].file_id
+#         user_photo_file = bot.get_file(user_photo_file_id)
+#         modify_photo.modify_photo(user_photo_file, constants.modified_image_save_path)
+#         result_file = os.path.join(script_directory, constants.modified_image_save_path)
+#         with open(result_file, 'rb') as result_image:
+#             new_photo = bot.send_photo(chat, result_image)
+#         new_photo_id = new_photo.photo[2].file_id
+#         # Get future previous chat photo
+#         chat_photos = bot.get_chat(chat).photo
+#         if not chat_photos:
+#             previous_chat_photo_id = "None"
+#         else:
+#             previous_chat_photo_id = chat_photos.big_file_id
+#         # Set new photo as chat photo
+#         new_photo_file = bot.get_file(new_photo_id)
+#         file = bot.download_file(new_photo_file.file_path)
+#         try:
+#             bot.set_chat_photo(chat, file)
+#         except telebot.apihelper.ApiException:
+#             bot.send_message(chat,
+#                              "I can't set a chat photo :( \nLooks like I don't have the appropriate admin rights")
+#         # Insert data into MySQL table
+#         new_chat_photo_id = bot.get_chat(chat).photo.big_file_id
+#         sql = "SELECT * FROM was_birthday WHERE Chat_Id = %s"
+#         cursor.execute(sql, (chat,))
+#         already_in_database = cursor.fetchall()
+#         # If this chat is already present in the database, update new_photo_id
+#         if already_in_database:
+#             sql = "UPDATE was_birthday SET New_Photo_Id = %s WHERE Chat_Id = %s"
+#             val = (new_chat_photo_id, chat)
+#             cursor.execute(sql, val)
+#         else:
+#             sql = "INSERT INTO was_birthday (Chat_Id, New_Photo_Id, Old_photo_Id) VALUES (%s, %s, %s)"
+#             val = (chat, new_chat_photo_id, previous_chat_photo_id)
+#             cursor.execute(sql, val)
+#         db.commit()
+#         # Send a message with congratulations
+#         name = get_username_or_first_name(chat, user_who_has_birthday_id)
+#         random_message = constants.messages_to_congratulate.get(
+#             random.randint(1, len(constants.messages_to_congratulate)))
+#         message_to_pin = bot.send_message(chat, random_message.format(name))
+#         random_sticker = constants.stickers_to_congratulate.get(
+#             random.randint(1, len(constants.stickers_to_congratulate)))
+#         bot.send_sticker(chat, random_sticker)
+#         # Pin the message with congratulations
+#         try:
+#             bot.pin_chat_message(chat, message_to_pin.message_id)
+#         except telebot.apihelper.ApiException:
+#             bot.send_message(chat, "I can't pin a message(( \nThat's a pity! "
+#                                    "\nLooks like I don't have the appropriate admin rights")
 #
-#         # ----------------------------------------------------------------------------------------------------------
-#         # Check if someone has birthday today ----------------------------------------------------------------------
-#         # Edit to fit MySQl DATE_FORMAT(Birthday, '%m.%d') ---------------------------------------------------------
-#         month_now = str(datetime.date.today().month)
-#         day_now = str(datetime.date.today().day)
-#
-#         if len(month_now) == 1:
-#             month_now = "0" + month_now
-#
-#         if len(day_now) == 1:
-#             day_now = "0" + day_now
-#         # -----------------------------------------------------------------------------------------------------------
-#
-#         cursor.execute("SELECT User_Id, Chat_Id FROM birthdays WHERE DATE_FORMAT(Birthday, '%m.%d') = {}"
-#                        .format(month_now + "." + day_now))
-#
-#         birthdays = cursor.fetchall()
-#
-#         for birthday in birthdays:
-#             script_directory = os.path.dirname(os.path.abspath(__file__))
-#             user_who_has_birthday_id, chat = birthday
-#             try:
-#                 bot.send_chat_action(chat, 'typing')
-#             except telebot.apihelper.ApiException:
-#                 sql = "DELETE FROM birthdays WHERE Chat_Id = %s"
-#                 val = (chat,)
-#                 cursor.execute(sql, val)
-#                 db.commit()
-#                 continue
-#             # Get user_who_has_birthday profile photo
-#             user_profile_photos = bot.get_user_profile_photos(user_who_has_birthday_id, limit=1).photos
-#             if not user_profile_photos:
-#                 bot.send_message(chat, "Looks like somebody doesn't have the profile photo. ")
-#                 user_profile_photos = bot.get_user_profile_photos(constants.bot_id, limit=1).photos
-#             user_photo_file_id = user_profile_photos[0][2].file_id
-#             user_photo_file = bot.get_file(user_photo_file_id)
-#             modify_photo.modify_photo(user_photo_file, constants.modified_image_save_path)
-#             result_file = os.path.join(script_directory, constants.modified_image_save_path)
-#             with open(result_file, 'rb') as result_image:
-#                 new_photo = bot.send_photo(chat, result_image)
-#             new_photo_id = new_photo.photo[2].file_id
-#             # Get future previous chat photo
-#             chat_photos = bot.get_chat(chat).photo
-#             if not chat_photos:
-#                 previous_chat_photo_id = "None"
-#             else:
-#                 previous_chat_photo_id = chat_photos.big_file_id
-#             # Set new photo as chat photo
-#             new_photo_file = bot.get_file(new_photo_id)
-#             file = bot.download_file(new_photo_file.file_path)
-#             try:
-#                 bot.set_chat_photo(chat, file)
-#             except telebot.apihelper.ApiException:
-#                 bot.send_message(chat,
-#                                  "I can't set a chat photo :( \nLooks like I don't have the appropriate admin rights")
-#             # Insert data into MySQL table
-#             new_chat_photo_id = bot.get_chat(chat).photo.big_file_id
-#             sql = "SELECT * FROM was_birthday WHERE Chat_Id = %s"
-#             cursor.execute(sql, (chat,))
-#             already_in_database = cursor.fetchall()
-#             # If this chat is already present in the database, update new_photo_id
-#             if already_in_database:
-#                 sql = "UPDATE was_birthday SET New_Photo_Id = %s WHERE Chat_Id = %s"
-#                 val = (new_chat_photo_id, chat)
-#                 cursor.execute(sql, val)
-#             else:
-#                 sql = "INSERT INTO was_birthday (Chat_Id, New_Photo_Id, Old_photo_Id) VALUES (%s, %s, %s)"
-#                 val = (chat, new_chat_photo_id, previous_chat_photo_id)
-#                 cursor.execute(sql, val)
-#             db.commit()
-#             # Send a message with congratulations
-#             name = get_username_or_first_name(chat, user_who_has_birthday_id)
-#             random_message = constants.messages_to_congratulate.get(
-#                 random.randint(1, len(constants.messages_to_congratulate)))
-#             message_to_pin = bot.send_message(chat, random_message.format(name))
-#             random_sticker = constants.stickers_to_congratulate.get(
-#                 random.randint(1, len(constants.stickers_to_congratulate)))
-#             bot.send_sticker(chat, random_sticker)
-#             # Pin the message with congratulations
-#             try:
-#                 bot.pin_chat_message(chat, message_to_pin.message_id)
-#             except telebot.apihelper.ApiException:
-#                 bot.send_message(chat, "I can't pin a message(( \nThat's a pity! "
-#                                        "\nLooks like I don't have the appropriate admin rights")
-#
-#             minutes_to_sleep = count_time_to_sleep(12)
-#             time.sleep(minutes_to_sleep)
+#         minutes_to_sleep = count_time_to_sleep(12)
+#         time.sleep(minutes_to_sleep)
 #
 #
 # check_birthday_thread = threading.Thread(target=check_birthday)

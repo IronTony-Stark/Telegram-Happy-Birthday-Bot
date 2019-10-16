@@ -13,7 +13,15 @@ import os
 import constants
 import modify_photo
 import random
-from main import db as db, cursor as cursor, bot as bot, get_username_or_first_name, awake_mysql_db
+from main import db, cursor, bot, get_username_or_first_name, awake_mysql_db
+
+
+def create_markup_pin():
+    markup_pin = telebot.types.InlineKeyboardMarkup()
+    markup_pin.row(telebot.types.InlineKeyboardButton("Pin", callback_data="pin"),
+                   telebot.types.InlineKeyboardButton("Dismiss", callback_data="dismiss"))
+    return markup_pin
+
 
 awake_mysql_db()
 
@@ -46,12 +54,14 @@ for past_birthday in was_birthdays:
                     bot.send_message(chat_id_of_past_birthday, "I can't set a chat photo :( "
                                                                "\nLooks like I don't have the appropriate admin rights")
             else:
-                file_of_old_photo = bot.download_file(bot.get_file(old_photo_of_past_birthday_id).file_path)
+                file_to_download = bot.get_file(old_photo_of_past_birthday_id)
+                file_of_old_photo = bot.download_file(file_to_download.file_path)
                 try:
                     bot.set_chat_photo(chat_id_of_past_birthday, file_of_old_photo)
                 except telebot.apihelper.ApiException:
-                    bot.send_message(chat_id_of_past_birthday, "I can't set a chat photo :( "
-                                                               "\nLooks like I don't have the appropriate admin rights")
+                    bot.send_message(chat_id_of_past_birthday,
+                                     "I can't set a chat photo :( "
+                                     "\nLooks like I don't have the appropriate admin rights")
 
     sql = "DELETE FROM was_birthday WHERE Chat_Id = %s AND New_Photo_Id = %s AND Old_photo_Id = %s"
     val = (chat_id_of_past_birthday, new_photo_of_past_birthday_id, old_photo_of_past_birthday_id)
@@ -96,19 +106,22 @@ for birthday in birthdays:
                                "\nOh.. "
                                "\nYea, right! I can help to choose!! How about this one?!")
         user_profile_photos = bot.get_user_profile_photos(constants.bot_id, limit=1).photos
-    user_photo_file_id = user_profile_photos[0][2].file_id
+    user_photo_file_id = user_profile_photos[0][-1].file_id
     user_photo_file = bot.get_file(user_photo_file_id)
     modify_photo.modify_photo(user_photo_file, constants.modified_image_save_path)
     result_file = os.path.join(script_directory, constants.modified_image_save_path)
     with open(result_file, 'rb') as result_image:
         new_photo = bot.send_photo(chat, result_image)
-    new_photo_id = new_photo.photo[2].file_id
+    new_photo_id = new_photo.photo[-1].file_id
     # Get future previous chat photo
     chat_photos = bot.get_chat(chat).photo
     if not chat_photos:
         previous_chat_photo_id = "None"
     else:
         previous_chat_photo_id = chat_photos.big_file_id
+    if previous_chat_photo_id != "None":
+        previous_chat_photo_file = bot.get_file(previous_chat_photo_id)
+        bot.download_file(previous_chat_photo_file.file_path)
     # Set new photo as chat photo
     new_photo_file = bot.get_file(new_photo_id)
     file = bot.download_file(new_photo_file.file_path)
@@ -134,12 +147,6 @@ for birthday in birthdays:
     # Send a message with congratulations
     name = get_username_or_first_name(chat, user_who_has_birthday_id)
     random_message = constants.messages_to_congratulate.get(random.randint(1, len(constants.messages_to_congratulate)))
-    message_to_pin = bot.send_message(chat, random_message.format(name))
+    bot.send_message(chat, random_message.format(name), reply_markup=create_markup_pin())
     random_sticker = constants.stickers_to_congratulate.get(random.randint(1, len(constants.stickers_to_congratulate)))
     bot.send_sticker(chat, random_sticker)
-    # Pin the message with congratulations
-    try:
-        bot.pin_chat_message(chat, message_to_pin.message_id)
-    except telebot.apihelper.ApiException:
-        bot.send_message(chat, "I can't pin a message(( \nThat's a pity! "
-                               "\nLooks like I don't have the appropriate admin rights")

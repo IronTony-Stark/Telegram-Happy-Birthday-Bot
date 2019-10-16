@@ -51,7 +51,7 @@ def get_username_or_first_name(chat_id, user_id):
 
 @app.route('/', methods=['GET', 'HEAD'])
 def index():
-    return '<h1>Happy Birthday Telegram Bot by Tony Stark</h1>'
+    return '<h1>Happy Birthday Telegram Bot by Iron Tony</h1>'
 
 
 @app.route('/', methods=['POST'])
@@ -71,9 +71,16 @@ def handle_text(message):
     Insert user id, his birth date and chat id into the database. If such user already exists in the database
     updates his birth date. Private chats not allowed
     """
+    chat = bot.get_chat(message.chat.id)
+
     # Private chats are not allowed
-    if message.chat.id == message.from_user.id:
+    if chat.type == "private":
         bot.send_message(message.chat.id, "Sorry, I don't work in private chats")
+        return
+
+    # Channels are not allowed
+    if chat.type == "channel":
+        bot.send_message(message.chat.id, "Sorry, I don't work in channels")
         return
 
     words_in_message = message.text.split()
@@ -193,7 +200,6 @@ def handle_text(message):
 def handle_text(message):
     bot.send_message(message.chat.id,
                      "mybirthday - /mybirthday [dd.mm.yyyy] The day, month and year when you were born"
-                     "\nbirthdayof - /birthdayof [user id] Shows when the user was born"
                      "\nnextbirthday - Shows whose birthday is next"
                      "\naboutme - Shows description")
 
@@ -211,41 +217,9 @@ def handle_text(message):
                      "it too. Finally, I’ll set this new photo as the chat profile photo! Next day I will reset the "
                      "chat profile photo with the one that was before."
                      "\n\nWith me it’s impossible to forget about birthdays of your friends! "
-                     "\n\nMy creator (@TonyStarkZal github.com/TonyStarkZal/Telegram-Happy-Birthday-Bot) said that he "
-                     "will be very thankful for your feedback, any suggestions are welcomed and bug reports are "
+                     "\n\nMy creator (@IronTony_Stark github.com/IronTony-Stark/Telegram-Happy-Birthday-Bot) said that "
+                     "he will be very thankful for your feedback, any suggestions are welcomed and bug reports are "
                      "priceless! Well, personally I am not sure about the last, but my creator knows best", True)
-
-
-@bot.message_handler(commands=['birthdayof'])
-def handle_text(message):
-    """
-    Searches the birth date of the user with the given user id
-    """
-    words_in_message = message.text.split()
-
-    if len(words_in_message) != 2:
-        bot.reply_to(message, 'Wrong format. '
-                              '\nPlease type "/mybirthday [user id]"')
-        return
-
-    user_id = words_in_message[1]
-
-    if not constants.user_id_pattern.match(user_id):
-        bot.reply_to(message, 'Wrong format of user id')
-        return
-
-    awake_mysql_db()
-
-    sql = "SELECT DATE_FORMAT(Birthday, '%m.%d') FROM birthdays WHERE User_Id = %s"
-    val = (user_id,)
-    cursor.execute(sql, val)
-    date_of_birth = cursor.fetchall()
-
-    if not date_of_birth:
-        bot.reply_to(message, "Unfortunately, I don't know when this user was born")
-
-    bot.reply_to(message, "{} was born on {} {}".format(
-        user_id, date_of_birth[0][0][3:], constants.months.get(int(date_of_birth[0][0][:2]))))
 
 
 @bot.message_handler(commands=['nextbirthday'])
@@ -318,6 +292,29 @@ def handle_text(message):
                      "\nNow add me to some chat group and type /mybirthday [your birth date in format dd.mm.yyyy]"
                      "\nType /aboutme if you want to get more info"
                      "\nHope you enjoy! :)")
+
+
+@bot.callback_query_handler(lambda query: query.data == "pin")
+def pin_message(query):
+    query_chat_id = query.message.chat.id
+    query_chat_admins = bot.get_chat_administrators(query_chat_id)
+    query_chat_admins_id = [admin.user.id for admin in query_chat_admins]
+    if query.from_user.id in query_chat_admins_id:
+        try:
+            bot.pin_chat_message(query_chat_id, query.message.message_id)
+            bot.edit_message_reply_markup(query_chat_id, query.message.message_id)
+            bot.answer_callback_query(query.id)
+        except telebot.apihelper.ApiException:
+            bot.send_message(query.message.chat.id, "I can't pin a message(( \nThat's a pity! "
+                                                    "\nLooks like I don't have the appropriate admin rights")
+    else:
+        bot.answer_callback_query(query.id, "You don't have permission to pin messages")
+
+
+@bot.callback_query_handler(lambda query: query.data == "dismiss")
+def remove_markup(query):
+    bot.edit_message_reply_markup(query.message.chat.id, query.message.message_id)
+    bot.answer_callback_query(query.id)
 
 
 # Threading ----------------------------------------------------------------------

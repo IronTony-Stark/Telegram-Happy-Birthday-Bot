@@ -18,6 +18,12 @@ My creator said that he will be very thankful for your feedback, any suggestions
 are welcomed and bug reports are priceless! Well, personally I am not sure about the last, 
 but my creator knows best
 
+## Birthdays
+
+![](screenshots/1.jpg) ![](screenshots/2.jpg) ![](screenshots/3.jpg)
+-
+![](screenshots/4.jpg) ![](screenshots/5.jpg) ![](screenshots/6.jpg)
+
 ## License & copyright
 
 Copyright (C) 16.06.2019 Anton Zalinyi, software engineer in the National University of "Kyiv-Mohyla Academy"

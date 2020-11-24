@@ -127,7 +127,7 @@ def handle_text(message):
                      "afraid somebody will find out your age, don't worry, I'll keep it in secret :)"
                      .format(year))
         bot.send_sticker(message.chat.id, "CAADAgADMgADVSx4C49XV6fn89_VAg")
-        return 
+        return
     # -------------------------------------------------------------------------------------------------
 
     user_id = message.from_user.id

@@ -313,7 +313,7 @@ def handle_text(message):
     results = cursor.fetchall()
 
     for row in results:
-        username = row[0]
+        username = get_username_or_first_name(message.chat.id, row[0])
         month, day = row[1][:2], row[1][3:]
         if month != current_month:
             if current_month != -1:

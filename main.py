@@ -281,7 +281,58 @@ def handle_text(message):
             return
 
     bot.reply_to(message, "Looks like there are no birthdays registered in this chat")
-    bot.send_sticker(message.chat.id, "CAADAgADQAADVSx4CwnTmrLuK3GoAg")
+    bot.send_sticker(message.chat.id, "CAADAgADQAADVSx4CwnTmrLuK3GoAg") 
+
+
+@bot.message_handler(commands=['listbirthdays'])
+def handle_text(message):
+    """
+    Lists all birthdays in this manner:
+    ```
+    January:
+    1 - username_or_first_name[, second_person [...]]
+
+    February:
+    1 - username_or_first_name[, second_person [...]]
+    ```
+
+    If no birthdays are found, it says "Looks like there are no birthdays registered in this chat" and sends a sticker
+    """
+    if message.chat.id == message.from_user.id:
+        bot.send_message(message.chat.id, "There's only one birthday coming up here... And I bet you can guess whose it is XD")
+        return
+
+    awake_mysql_db()
+
+    sql_query = "SELECT User_Id, DATE_FORMAT(Birthday, '%m.%d') FROM birthdays WHERE MONTH(Birthday) > -1 AND Chat_Id = %s ORDER BY MONTH(Birthday), Day(Birthday)"
+
+    list_of_birthdays = ""
+    current_month = -1
+    current_day = -1
+    cursor.execute(sql_query, message.chat.id)
+    results = cursor.fetchall()
+
+    for row in results:
+        username = get_username_or_first_name(message.chat.id, row[0])
+        month, day = row[1][:2], row[1][3:]
+        if month != current_month:
+            if current_month != -1:
+                list_of_birthdays += "\n\n"
+            month = current_month
+            list_of_birthdays += constants.months.get(int(month))+":"
+            current_day = -1
+        
+        if current_day == day:
+            list_of_birthdays += ", "+username
+        else:
+            list_of_birthdays += "\n"+str(day)+" - "+username
+            current_day = day
+
+    if list_of_birthdays == "":
+        bot.reply_to(message, "Looks like there are no birthdays registered in this chat")
+        bot.send_sticker(message.chat.id, "CAADAgADQAADVSx4CwnTmrLuK3GoAg")
+    else:
+        bot.send_message(message.chat.id, list_of_birthdays)
 
 
 @bot.message_handler(commands=['start'])

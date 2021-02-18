@@ -281,7 +281,7 @@ def handle_text(message):
             return
 
     bot.reply_to(message, "Looks like there are no birthdays registered in this chat")
-    bot.send_sticker(message.chat.id, "CAADAgADQAADVSx4CwnTmrLuK3GoAg") 
+    bot.send_sticker(message.chat.id, "CAADAgADQAADVSx4CwnTmrLuK3GoAg")
 
 
 @bot.message_handler(commands=['listbirthdays'])
@@ -298,41 +298,54 @@ def handle_text(message):
 
     If no birthdays are found, it says "Looks like there are no birthdays registered in this chat" and sends a sticker
     """
-    if message.chat.id == message.from_user.id:
-        bot.send_message(message.chat.id, "There's only one birthday coming up here... And I bet you can guess whose it is XD")
+    chat_id = message.chat.id
+
+    if chat_id == message.from_user.id:
+        bot.send_message(chat_id, "There's only one birthday coming up here... "
+                                  "And I bet you can guess whose it is XD")
+        bot.send_sticker(chat_id, "CAADAgADMgADVSx4C49XV6fn89_VAg")
         return
 
     awake_mysql_db()
 
-    sql_query = "SELECT User_Id, DATE_FORMAT(Birthday, '%m.%d') FROM birthdays WHERE MONTH(Birthday) > -1 AND Chat_Id = %s ORDER BY MONTH(Birthday), Day(Birthday)"
+    sql_query = "SELECT User_Id, DATE_FORMAT(Birthday, '%m.%d') " \
+                "FROM birthdays " \
+                "WHERE MONTH(Birthday) > -1 AND Chat_Id = %s ORDER BY MONTH(Birthday), Day(Birthday)"
+
+    cursor.execute(sql_query, (chat_id,))
+    results = cursor.fetchall()
 
     list_of_birthdays = ""
     current_month = -1
     current_day = -1
-    cursor.execute(sql_query, message.chat.id)
-    results = cursor.fetchall()
 
-    for row in results:
-        username = get_username_or_first_name(message.chat.id, row[0])
-        month, day = row[1][:2], row[1][3:]
-        if month != current_month:
+    for user_id, birthday in results:
+        try:
+            chat_member = bot.get_chat_member(chat_id, user_id)
+            username = chat_member.user.first_name
+        except telebot.apihelper.ApiException:
+            continue
+
+        month, day = birthday[:2], birthday[3:]
+
+        if current_month != month:
             if current_month != -1:
                 list_of_birthdays += "\n\n"
-            month = current_month
-            list_of_birthdays += constants.months.get(int(month))+":"
+            current_month = month
+            list_of_birthdays += constants.months.get(int(month)) + ":"
             current_day = -1
-        
+
         if current_day == day:
-            list_of_birthdays += ", "+username
+            list_of_birthdays += ", " + username
         else:
-            list_of_birthdays += "\n"+str(day)+" - "+username
+            list_of_birthdays += "\n" + str(day) + " - " + username
             current_day = day
 
-    if list_of_birthdays == "":
+    if not list_of_birthdays:
         bot.reply_to(message, "Looks like there are no birthdays registered in this chat")
-        bot.send_sticker(message.chat.id, "CAADAgADQAADVSx4CwnTmrLuK3GoAg")
+        bot.send_sticker(chat_id, "CAADAgADQAADVSx4CwnTmrLuK3GoAg")
     else:
-        bot.send_message(message.chat.id, list_of_birthdays)
+        bot.send_message(chat_id, list_of_birthdays)
 
 
 @bot.message_handler(commands=['start'])
